@@ -21,7 +21,7 @@ jobs:
       - name: Cache NPM dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.npm
+          path: ~/node-modules
           key: '${{ runner.os }}-node-modules-${{ hashFiles(''package-lock.json'') }}'
       - name: Install Dependencies
         run: npm install
@@ -40,6 +40,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/node-modules
+          key: '${{ runner.os }}-node-modules-${{ hashFiles(''package-lock.json'') }}'
       - run: npm install
       - continue-on-error: true
         run: npm run coverage
@@ -66,9 +71,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: >-
-            ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha
-            }}
+          tags: ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}
   dev-deploy:
     needs: docker
     runs-on: ubuntu-latest
@@ -85,7 +88,7 @@ jobs:
           kubeconfig: '${{ secrets.KUBECONFIG }}'
       - run: kubectl version -o yaml
 # Below codes are added to complete the task
-      - run: >
+      - run: |
           echo "INGRESS_IP=$(kubectl -n ingress-nginx get services
           ingress-nginx-controller -o
           jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> $GITHUB_ENV
@@ -97,8 +100,6 @@ jobs:
         env:
           NAMESPACE: '${{ vars.NAMESPACE }}'
           REPLICAS: '${{ vars.REPLICAS }}'
-          IMAGE: >-
-            ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha
-            }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}
           INGRESS_IP: '${{ env.INGRESS_IP }}'
       - run: cat kubernetes/development/*.yaml
